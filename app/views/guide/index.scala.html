@@ -1,0 +1,162 @@
+@guide_base("传統状态模式编程模型 VS 生命周期框架编程模型") {
+<h3>传統状态模式编程模型 VS 生命周期框架编程模型</h3>
+<p>传统编程模型可以采用最经典的状态模式构建状态机，已达到刻画对象生命周期的目的。在这种编程模型中，为了表达一个状态转移需要应用程序员编写下面类似的代码。
+    例如在Android开放源代码中的<a
+            href="http://androidxref.com/4.2_r1/xref/frameworks/base/core/java/com/android/internal/util/StateMachine.java">StateMachine.java</a>
+</p>
+<pre>
+    private class HaltingState extends State {
+728     @@Override
+729     public boolean processMessage(Message msg) {
+730         mSm.haltedProcessMessage(msg);
+731         return true;
+732     }
+733 }
+...
+    private class QuittingState extends State {
+739     @@Override
+740     public boolean processMessage(Message msg) {
+741         return NOT_HANDLED;
+742     }
+743 }
+</pre>
+<p> 这种虽然完全可以表达状态机的语义并且对于生命周期的变化也非常容易扩展。但是存在以下几个缺点：</p>
+<ol>
+    <li>要想观看状态机的全貌，这种表达不是很直观。</li>
+    <li>
+        状态机描述与业务代码的耦合，导致状态机不能重用，这也是把这个状态作为内置类的一个原因。比如若QuittingState根据不同的Message可以去到不同的State，那么业务代码的逻辑判断必须融合到这个QuitingState当中。这个生命周期部分的描述就不可以给其他对象重用。表达方式抽象程度不够。
+    </li>
+    <li>
+        没有改变开发实践，未能在开发实践中突出对象生命周期设计的重要性。倘若将生命周期通过元数据的方式描述同时与业务代码分开，那么在开发实践中，生命周期的设计工作可以跟团队中设计能力较强的同事的来进行，而经验不丰富的同事可以来编写一般意义上的计算逻辑或者业务逻辑。若有生命周期上的调整，直接修改的是元数据的部分，而不是业务代码的部分，当然如果计算逻辑需要调整一定要修改业务代码。这样的好处是可以让生命周期元数据部分受到更好的管控。而不是在某一个业务对象的Java文件里的某一行修改。
+    </li>
+    <li>
+        生命周期回调以及状态变化事件的监听，依然需要采取类似于Observer的方式进行。这也是微妙的控制结构表达的问题。这种编程模型是过去比较流行的，现如今Annotation大行其道，通常为了实现回调功能，过去需要写一个类实现一个接口，而现如今只需要声明一个方法，并添加一个Annotation即可，虽然思想相同，但是表达方式更加的简洁。
+    </li>
+</ol>
+<p>Lifecycle的原型在5年前逐渐的演化，从仅仅通过Hash算法进行Transition（转移）的合法性校验，到使用状态模式在processMessage方法中编写更多的业务逻辑。到使用Java Reflection + 动态代理
+    来进一步简化编程模型，使用元数据描述生命周期，使得生命周期与业务代码分离。再到现如今的通过 Java
+    Instrument在运行时或者编译时修改class字节码，以便去掉Java动态代理必须要求一个接口的多余限制。旨在使得编程模型变得更加简洁。这个路线也是大多数开源软件框架的路线。比如EJB框架，从EJB2.0必须实现Home接口和EJB接口，到只需要@@Stateless类似的注释即可完成与容器之间的交互。
+</p>
+<p>
+    不过生命周期框架的核心思想是：对于OO设计和编程，要重视生命周期的设计，以减少多年后软件或者软件服务升级所带来的苦恼，包括减少代码量，减少测试代码。从对象与对象的交互出发，通过生命周期这把标尺来设计一个概念的范围，比如一个类的范围，哪些行为哪些属性应该包含在一个概念当中，对象与对象之间的关系也是通过生命周期这把标尺来衡量。</p>
+<p>
+    至于表达方式，满足产品本身的性质即可。如果是一个很小的软件，也没有很长的维护周期，那么一个状态模式就已经足够好了。对于复杂的软件，包含很多业务对象，甚至有较深的层级关系，对象与对象之间的关系比较复杂，这个时候采用元数据来描述各自的生命周期以及约束，把生命周期相关的工作交给生命周期引擎完成，就是更好的选择。</p>
+<p>Lifecycle 基于有限状态机的数学模型定义了编程模型。Lifecycle的编程模型有两部分构成：</p>
+<ul>
+    <li><strong>生命周期的元数据描述</strong></li>
+    <li><strong>POJO</strong></li>
+</ul>
+<p>
+    生命周期元数据包括以下几部分：
+</p>
+<ul>
+    <li>状态集合 @@StateSet，定义了初始状态@@Initial，最终状态@@End，其他状态，</li>
+    <li>转移集合 @@EventSet, 定义了生命周期中全部事件</li>
+    <li>关系集合 @@RelationSet，定义了生命周期关系型约束中需要的全部关系</li>
+    <li>条件集合 @@ConditionSet，定义了条件转移中的全部条件接口</li>
+</ul>
+<p>
+    其中生命周期元数据描述部分与POJO部分分离，这使得在一些复杂情况下，生命周期元数据自身的多态性可以增加重用能力。<br/>
+    而POJO部分并不需要编写额外的代码。只是需要通过Annotation指明Lifecycle Engine需要的以下成分即可：
+<ul>
+    <li>状态指示器</li>
+    <li>事件方法</li>
+    <li>条件转移</li>
+    <li>关系对象Getter</li>
+    <li>生命周期回调方法。</li>
+</ul>
+</p>
+
+<pre>
+@@StateMachine
+protected static interface CustomerLifecycleMeta {
+
+    @@StateSet
+    static interface States {
+
+        @@Initial
+        @@Transition(event = CustomerLifecycleMeta.Events.Activate.class, value = { Active.class })
+        static interface Draft {}
+        @@Transitions({ @@Transition(event = CustomerLifecycleMeta.Events.Suspend.class, value = Suspended.class),
+                @@Transition(event = CustomerLifecycleMeta.Events.Cancel.class, value = Canceled.class) })
+        static interface Active {}
+        @@Transition(event = CustomerLifecycleMeta.Events.Resume.class, value = Active.class)
+        static interface Suspended {}
+        @@Final
+        static interface Canceled {}
+    }
+    @@EventSet
+    static interface Events {
+
+        static interface Activate {}
+        static interface Suspend {}
+        static interface Resume {}
+        static interface Cancel {}
+    }
+}
+</pre>
+<p>
+    如上述代码片段中，描述了一个简单业务对象的生命周期元数据，它仅包括了状态集合States以及事件集合EventSet。其中状态集合中包含了Draft, Active, Suspended, Canceled四个状态，其中Draft是初始状态（通过@@Initial标注），Canceled是最终状态或终结状态（通过@@Final标注）。
+    事件集合中包含了Activate, Suspend, Resume以及Cancel四个事件。状态与事件之间的关系通过@@Transition刻画，如下段代码中的@@Transition用来描述，当对象处于Draft状态上，事件Activate可以将对象变换到Active状态；而其他事件对于Draft状态是无效的。
+</p>
+<pre>
+@@Initial
+@@Transition(event = CustomerLifecycleMeta.Transitions.Activate.class, value = { Active.class })
+static interface Draft {}
+</pre>
+<p>POJO部分代码如下：</p>
+<pre>
+public abstract static class ReactiveObject {
+
+    @@StateIndicator
+    private String state = null;
+
+    protected void initialState(String stateName) {
+        if ( null == state ) {
+            this.state = stateName;
+        } else {
+            throw new IllegalStateException("Cannot call initialState method after state had been intialized.");
+        }
+    }
+
+    public String getState() {
+        return state;
+    }
+}
+</pre>
+<pre>
+@@LifecycleMeta(CustomerLifecycleMeta.class)
+public static class Customer extends ReactiveObject {
+
+    protected Customer() {
+        initialState(Draft.class.getSimpleName());
+    }
+
+    @@Event
+    public Customer activate() {
+        return new Customer();
+    }
+
+    @@Event
+    public void suspend() {}
+
+    @@Event
+    public void resume() {}
+
+    @@Event
+    public void cancel() {}
+}
+</pre>
+<p>
+    对于这个简单POJO，即使没有生命周期框架的支持，上面代码片段中的四个业务方法以及对状态属性赋予初始值还是要写的，除此以外还要定义状态模式的四个状态类，然后以紧耦合的方式将状态模式的processMessage方法与四个业务方法联系到一起。而有了生命周期框架的支持，在定义了状态属性以及四个业务方法以后，仅需要对其进行标注。<br/>
+    其中@@StateIndicator用来指明LifecycleEngine从哪里读取当前业务对象的状态或向哪里写入新的状态。@@Event用来表明某个方法是一个事件方法，可以通过@@Transition(Cancel.class)来对应生命周期元数据中的Cancel事件，也可以通过方法名称cancel首字母大写后与Cancel类的SimpleName相匹配。
+</p>
+<p>
+    在实际的设计与编程实践中，可以由偏向设计职能的同事完成生命周期的设计并产生生命周期描述元数据，由偏向业务逻辑编写职能的同事完成业务代码的编写。
+    这使得生命周期设计本身与源代码的生命周期始终保持一致，因为元数据本身就是代表了生命周期的设计。任何情况下对业务对象生命周期的调整都必须修改生命周期元数据描述，这也使得只要通过生命周期元数据描述，就可以确切的知道当前业务对象的生命周期的设计。
+    而相对于经典的状态机设计模式，生命周期元数据描述更具表达能力，更简洁清晰。省去了必须在processMessage方法控制结构中返回下一个状态的表达约束。
+</p>
+<p>
+    除此以外，生命周期引擎还提供状态校验，转移校验，关系约束校验，条件转移，新状态设置，生命周期回调，生命周期事件传播，可插拔的并发锁控制等功能。
+</p>
+}

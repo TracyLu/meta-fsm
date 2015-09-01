@@ -1,0 +1,160 @@
+@tutorial_base("Welcome to Lifecycle") {
+<h2>3 - 解决方案</h2>
+<p>经过问题分解，我们已经定义出了ATM对象及其状态图，接下来我们就要介绍如何采用Lifecycle(FSM)框架来实现ATM。</p>
+<p>主要有以下几部分工作：</p>
+<ol>
+    <li>定义ATM生命周期(状态机)</li>
+    <li>实现ATM业务对象</li>
+    <li>监听ATM的生命周期事件</li>
+    <li>UI更新</li>
+</ol>
+<h3>1.定义ATM生命周期(状态机)</h3>
+我们使用Java接口，按照Lifecycle规定的<a>语法格式</a>定义ATM的生命周期。
+<pre>
+@@StateMachine  <comment>//1.用@@StateMachine来声明该接口定义的是一个状态机（包括状态集合、事件集合和条件集合。）</comment>
+public interface ATMLifecycle {
+
+    @@StateSet  <comment>//2.用@@StateSet来声明该接口定义的是状态集，包括空(Empty)、非空(NonEmpty)、满(Full)和回收(Recycled)四个状态。</comment>
+    interface States {
+        @@Initial <comment>//2.1用@@Initial来声明该类定义的是初始状态</comment>
+        @@Transitions({@@Transition(event = Events.Deposit.class, value = NonEmpty.class),
+                @@Transition(event=Events.Recycle.class, value=Recycled.class)})<comment>//2.2 声明该状态上具有2个转移函数</comment>
+        class Empty {}
+
+        @@Transitions({@@Transition(event = Events.Deposit.class, value = {NonEmpty.class, Full.class}),
+                @@Transition(event = Events.Withdraw.class, value = {NonEmpty.class, Empty.class})
+        })
+        class NonEmpty {}
+
+        @@Transition(event = Events.Withdraw.class, value = NonEmpty.class)
+        class Full {}
+
+        @@Final <comment>//2.3用@@Final来声明该状态为终结状态</comment>
+        class Recycled {}
+
+    }
+
+    @@EventSet <comment>//3.声明该接口定义的是事件集合，包括存钱(Deposit)、取钱(Withdraw)和回收(Recycle)三个事件。</comment>
+    interface Events {
+
+        <comment>//3.1
+            用@@Conditional声明该事件是个条件事件，下一个状态依赖于条件的判定。condition定义了ATM类必须实现的接口，judger定义了进行条件判定的类，postEval定义了判定是否在执行完该函数后进行。
+        </comment>
+        @@Conditional(condition = Conditions.CashCounter.class, judger = Utilities.TotalCashJudger.class, postEval = true)
+        class Deposit {}
+
+        @@Conditional(condition = Conditions.CashCounter.class, judger = Utilities.TotalCashJudger.class, postEval = true)
+        class Withdraw {}
+
+        class Recycle {}
+    }
+
+    @@ConditionSet <comment>//4.声明该接口定义的是条件集合</comment>
+     interface Conditions {
+
+        interface CashCounter {<comment>//4.1用接口的形式定义了CashCounter这个条件，使用这个状态机的类必须要实现这个接口。</comment>
+
+            Integer getTotalCash(); <comment>//4.2定义了条件的判定项</comment>
+        }
+    }
+
+    class Utilities {
+
+        public static class TotalCashJudger implements ConditionalEvent&lt;Conditions.CashCounter&gt; { <comment>
+    //5.定义进行条件判定的Judger类,实现ConditionalEvent接口，并在范性中指定条件接口。
+</comment>
+            @@Override
+            public Class<?> doConditionJudge(Conditions.CashCounter t) {
+                if (t.getTotalCash() >= 500) {
+                    return States.Full.class;
+                } else if (t.getTotalCash() < 500 && t.getTotalCash() > 0) {
+                    return States.NonEmpty.class;
+                } else {
+                    return States.Empty.class;
+                }
+            }
+        }
+    }
+}
+</pre>
+<h3>2.实现ATM业务对象</h3>
+我们采用了Scala语言来实现ATM类，非常简单。
+<pre>
+@@LifecycleMeta(classOf[ATMLifecycle]) <comment>//1.采用@@LifecycleMeta指定ATM使用的状态机为ATMLifecycle</comment>
+case class ATM(operatorId: Int) extends ATMLifecycle.Conditions.CashCounter{ <comment>//2.实现Condition接口</comment>
+  private var totalCash: Int = 0
+
+  @@StateIndicator <comment>//3.采用@@StateIndicator声明state属性</comment>
+  private var state = classOf[ATMLifecycle.States.Empty].getSimpleName
+
+  @@Condition(classOf[ATMLifecycle.Conditions.CashCounter]) <comment>//4.用@@Condition指定返回CashCounter条件对象</comment>
+  def getCashCounter() = this
+
+
+  def getTotalCash(): Integer = totalCash
+
+  def getState() = state
+
+  @@Event(classOf[Deposit]) <comment>//5.用@@Event指定Deposit事件的处理方法</comment>
+  def deposit() = {
+    totalCash += 100
+  }
+
+
+  @@Event(classOf[Withdraw])
+  def withdraw() = {
+    totalCash -= 100
+  }
+
+  @@Event(classOf[Recycle])
+  def recycle() = {
+    totalCash = 0
+  }
+
+}
+</pre>
+<h3>3.监听ATM的生命周期事件</h3>
+Lifecycle框架给开发者预留了生命周期事件处理的回调接口：LifecycleEventHandler。
+<pre>
+package net.imadz.lifecycle;
+
+public interface LifecycleEventHandler {
+
+    public void onEvent(LifecycleEvent event);
+}
+</pre>
+我们只需要创建一个类来实现了LifecycleEventHandler接口，并重写onEvent方法。
+<pre>
+class DefaultLifecycleEventHandler extends LifecycleEventHandler {
+    override def onEvent(lifecycleEvent: LifecycleEvent): Unit = {
+      if (lifecycleEvent.getReactiveObject.isInstanceOf[ATM]) {  <comment>//LifecycleEvent中的Reactive Object就是被状态机处理的对象
+</comment>
+        val atm = lifecycleEvent.getReactiveObject.asInstanceOf[ATM]
+        val userId = atm.operatorId
+        val start = new DateTime(lifecycleEvent.startTime())
+        val cost = lifecycleEvent.endTime - lifecycleEvent.startTime
+        lifecycleEvent.event() match { <comment>//LifecycleEvent中的event()方法返回的是事件名</comment>
+          case "Deposit" | "Withdraw" | "Recycle" =>
+            println(s"${lifecycleEvent.event()} on ATM, ${lifecycleEvent.fromState()} => ${lifecycleEvent.toState} @@ ${start} costs ${cost} millis")
+            atmActor ! EventInfo(userId, lifecycleEvent.event(), atm.getTotalCash(), lifecycleEvent.fromState(), lifecycleEvent.toState(), start, cost)
+          case _ =>
+        }
+      }
+    }
+  }
+</pre>
+我们采用了Play 2.3.7来实现这个样例，因此在Global对象的onStart方法中注册了DefaultLifecycleEventHandler。
+<pre>
+override def onStart(app: Application): Unit = {
+  @@LifecycleRegistry(Array(classOf[ATM], classOf[DefaultLifecycleEventHandler]))
+  @@StateMachineBuilder
+  class Registry() extends AbsStateMachineRegistry {}
+  new Registry()
+}
+</pre>
+
+<h3>4.UI更新</h3>
+为了在浏览器获取ATM的状态更新，且不刷新页面。我们使用了Ajax来发送用户的请求，并且为每一个用户创建了一个基于Websocket的信道。
+
+
+}

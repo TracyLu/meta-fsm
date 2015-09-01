@@ -1,0 +1,86 @@
+@tutorial_base("Tutorial") {
+<!-- ngInclude: partialPath -->
+<h1>ATM系统应用入门教程</h1>
+
+<p>了解Lifecycle的一个很好的方式是学习这个入门教程，它将告诉你如何使用Lifecycle框架来增强你的应用。这个应用将构建一个ATM系统，给客户提供存钱和取钱服务。</p>
+
+<p><img class="diagram" src="/assets/images/tutorial/atm-tutorial.png" width="60%" height="413" alt="demo
+application running in the browser"></p>
+
+<p>跟随这个入门教程来了解Lifecycle如何使得开发更简单和更健壮。</p>
+<ul>
+    <li>看样例如何分开状态管理逻辑和业务逻辑</li>
+</ul>
+<p>当你完成入门教程你将能够：</p>
+<ul>
+    <li>创建一个使用Lifecycle框架的应用。</li>
+</ul>
+<h1 id="get-started">开始</h1>
+
+<p>下文将介绍如何配置你的本地机器来进行开发。
+    如果你只是想看入门教程，你可以直接去看第一步：
+    <a href="tutorial/step_01">1 - 问题定义</a>。</p>
+
+<h3 id="install-git">安装 Git</h3>
+
+<p>你可以下载和安装Git从<a
+        href="http://git-scm.com/download">http://git-scm.com/download</a>。
+    一旦安装成功，你应该可以访问<code><span class="pln">git</span></code>命令行工具。 你将使用到的主要命令是：</p>
+<ul>
+    <li><code><span class="pln">git clone </span><span class="pun">...</span></code> : 克隆一个远程仓库到你的本地机器。</li>
+    <li><code><span class="pln">git checkout </span><span class="pun">...</span></code> : 切换到某个特别的分支或者标记的版本。
+    </li>
+</ul>
+<h3 id="download-angular-phonecat">下载metafsm-atm</h3>
+
+<p>克隆位于GitHub的<a href="https://github.com/TracyLu/metafsm-atm">metafsm-atm
+    仓库</a>，使用以下命令：</p>
+<pre><code><span class="pln">git clone </span><span class="pln"> https</span><span class="pun">:</span><span
+        class="com">//github.com/TracyLu/metafsm-atm.git</span></code></pre>
+<p>这个命令在你的当前目录下创建<code><span class="pln">metafsm</span><span
+        class="pun">-</span><span class="pln">atm</span></code> 目录.</p>
+
+<p>切换你的当前目录到<code><span class="pln">metafsm</span><span
+        class="pun">-</span><span class="pln">atm</span></code>.</p>
+<pre><code><span class="pln">cd metafsm</span><span class="pun">-</span><span
+        class="pln">atm</span></code></pre>
+<p>从现在起，这个入门教程的所有说明都是假定你运行所有的命令都是在
+    <code><span class="pln">metafsm</span><span class="pun">-</span><span class="pln">atm</span></code>目录下。</p>
+
+<h3 id="install-node-js">安装 JDK</h3>
+
+<p>首先，当你打算要基于Java来开发应用时，你必须安装JDK 1.7 +。</p>
+
+<p>下载URL：&nbsp;
+    <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">http://www.oracle.com/technetwork/java/javase/archive-139210.html</a>.
+</p>
+
+<p>安装完毕后，你可以运行以下命令来检查JDK的版本：</p>
+<pre><code><span class="pln">java </span><span class="pun">-</span><span
+        class="pln">version</span></code></pre>
+
+<h3 id="install-helper-tools-optional-">安装sbt</h3>
+
+<p>SBT是一个针对Scala和Java项目的、开源的构建工具，类似于Java的Maven和Ant。
+
+<p>在sbt的官网上有安装指南，请根据你的操作系统，安装最新的sbt版本。</p>
+
+<p>目前，我们使用的是0.13.8版本。</p>
+
+<p>下载URL： &nbsp;<a
+        href="http://www.scala-sbt.org/download.html">http://www.scala-sbt.org/download.html</a></p>
+
+<p>请运行以下命令检查你安装的sbt版本：</p>
+<pre><code><span class="pln">sbt </span><span class="pun">-</span><span
+        class="pln">version</span></code></pre>
+
+
+<h3 id="install eclipse">安装IntelliJ IDEA Community Edition</h3>
+
+<p>非常不错的IDE，支持Java,Scala等很多开发语言。因为我们在程序中使用了Scala语言，所以选择了IDEA。</p>
+
+<p>你可以下载最新版本。目前，我们使用的是14.1.4版本。</p>
+
+<p>下载URL：&nbsp; <a href="http://www.jetbrains.com/idea/download/">http://www.jetbrains.com/idea/download/</a>
+</p>
+}

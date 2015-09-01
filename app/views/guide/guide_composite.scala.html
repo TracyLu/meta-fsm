@@ -1,0 +1,91 @@
+@guide_base("复合状态机示例"){
+<h3>复合状态机示例</h3>
+<p>假定订单系统中订单的生命周期有如下需求：</p>
+<ol>
+    <li>新建的订单经管理员确认后进入开始状态。</li>
+    <li>订单开始之后，生产部门安排生产，并反馈。</li>
+    <li>订单生产完毕，物流部门进行派送，并反馈。</li>
+    <li>客户确认订单收货，该订单结束。</li>
+    <li>在未确认收货之前，客户可随时取消订单。</li>
+</ol>
+<p>根据需求，我们绘制了客户的状态图，如下所示：</p>
+<img class="diagram" src="/assets/images/guide/Composite_FSM.png" width="40%" height="40%" alt="Composite FSM"></p>
+<p>根据状态图，我们用状态机元数据描述如下：</p>
+<pre>
+@@StateMachine
+static interface OrderLifecycle {
+
+    @@StateSet
+    static interface States {
+
+        @@Initial
+        @@Transition(event = Events.Start.class, value = Started.class)
+        static interface Created {}
+        @@CompositeState
+        @@Transition(event = Events.Cancel.class, value = Canceled.class)
+        static interface Started {
+
+            @@StateSet
+            static interface SubStates {
+
+                @@Initial
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.DoProduce.class, value = Producing.class)
+                static interface OrderCreated {}
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.DoDeliver.class, value = Delivering.class)
+                static interface Producing {}
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.ConfirmComplete.class, value = Done.class)
+                static interface Delivering {}
+                @@Final
+                @@ShortCut(OrderLifecycle.States.Finished.class)
+                static interface Done {}
+            }
+            @@EventSet
+            static interface SubEvents {
+
+                static interface DoProduce {}
+                static interface DoDeliver {}
+                static interface ConfirmComplete {}
+            }
+        }
+        @@Final
+        static interface Finished {}
+        @@Final
+        static interface Canceled {}
+    }
+    @@EventSet
+    static interface Events {
+
+        static interface Start {}
+        static interface Cancel {}
+    }
+}
+</pre>
+<p>图中的Started是一个组合状态，里面包含了一个子状态机。这么设计的原因是客户在开始订单之后、未确认收货之前都可以要求取消订单。</p>
+<p>下面是POJO代码：</p>
+<pre>
+public abstract static class ProductBase extends ReactiveObject {}
+
+@@LifecycleMeta(OrderLifecycle.class)
+public static class ProductOrder extends ProductBase {
+
+    public ProductOrder() {
+        initialState(OrderLifecycle.States.Created.class.getSimpleName());
+    }
+
+    @@Event
+    public void start() {}
+
+    @@Event
+    public void cancel() {}
+
+    @@Event
+    public void doProduce() {}
+
+    @@Event
+    public void doDeliver() {}
+
+    @@Event
+    public void confirmComplete() {}
+}
+</pre>
+}

@@ -1,0 +1,184 @@
+@guide_base("关系型复合状态机服务示例"){
+<h3>关系型复合状态机服务</h3>
+<p>在组合状态机器示例中，我们分析了订单的生命周期。假定系统有了新的需求，所有的客户必须签订合同，<i>且只有在合同有效的情况下</i>，客户的订单才能被处理。</p>
+<h5>合同的处理有如下要求：</h5>
+<ul>
+    <li>合同有4个状态：正在起草中的、有效的、过期的、被取消的</li>
+    <li>起草中的合同若被激活，则变成了有效的合同；</li>
+    <li>起草中的合同若被取消，则变成了取消的的合同；</li>
+    <li>有效的合同若被取消，则变成了取消的合同；</li>
+    <li>有效的合同若过期，则变成了过期的合同。</li>
+</ul>
+<p>合同的状态图如下：</p>
+<p><img src="/assets/images/guide/Relational_Contract.png" width="40%" height="40%" alt="合同"></p>
+<p>根据状态图，我们用状态机元数据描述如下：</p>
+<pre>
+@@StateMachine
+static interface ContractLifecycle {
+
+    @@StateSet
+    static interface States {
+
+        @@Initial
+        @@Transitions({ @@Transition(event = ContractLifecycle.Events.Activate.class, value = Active.class),
+                @@Transition(event = ContractLifecycle.Events.Cancel.class, value = Canceled.class) })
+        static interface Draft {}
+        @@Transitions({ @@Transition(event = ContractLifecycle.Events.Expire.class, value = Expired.class),
+                @@Transition(event = ContractLifecycle.Events.Cancel.class, value = Canceled.class) })
+        static interface Active {}
+        @@Final
+        static interface Expired {}
+        @@Final
+        static interface Canceled {}
+    }
+    @@EventSet
+    static interface Events {
+
+        static interface Activate {}
+        static interface Expire {}
+        static interface Cancel {}
+    }
+}
+
+public abstract static class ReactiveObject {
+
+    @@StateIndicator
+    private String state = null;
+
+    protected void initialState(String stateName) {
+        if ( null == state ) {
+            this.state = stateName;
+        } else {
+            throw new IllegalStateException("Cannot call initialState method after state had been initialized.");
+        }
+    }
+
+    public String getState() {
+        return state;
+    }
+}
+
+@@LifecycleMeta(ContractLifecycle.class)
+public static class Contract extends ReactiveObject {
+
+    public Contract() {
+        initialState(ContractLifecycle.States.Draft.class.getSimpleName());
+    }
+
+    @@Event
+    public void activate() {}
+
+    @@Event
+    public void expire() {}
+
+    @@Event
+    public void cancel() {}
+}
+</pre>
+<p>为了实现只有在合同处于有效状态时，客户订单才能被处理的需求，我们需要在订单事件发生时，检测合同的状态。<br/>
+我们通过在订单状态上添加@@ValidWhile标识来表达这个约束语义。</p>
+<p>@@ValidWhile的定义如下：</p>
+<pre>
+@@Target(ElementType.TYPE)
+@@Retention(RetentionPolicy.RUNTIME)
+public @@interface ValidWhile {
+
+    Class<?> relation(); <comment>//关系</comment>
+
+    Class<?>[] on();
+
+    boolean nullable() default false;<comment>//关系是否可为空，可为空则代表</comment>
+
+    ErrorMessage[] otherwise() default {};
+}
+</pre>
+<pre>
+@@StateMachine
+static interface OrderLifecycle {
+
+    @@StateSet
+    static interface States {
+
+        @@Initial
+        @@Transition(event = Events.Start.class, value = Started.class)
+        @@ValidWhile(on = { ContractLifecycle.States.Active.class }, relation = Relations.Contract.class)
+        static interface Created {}
+        @@CompositeState
+        @@Transition(event = Events.Cancel.class, value = Canceled.class)
+        @@ValidWhile(on = { ContractLifecycle.States.Active.class }, relation = Relations.Contract.class)
+        static interface Started {
+
+            @@StateSet
+            static interface SubStates {
+
+                @@Initial
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.DoProduce.class, value = Producing.class)
+                static interface OrderCreated {}
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.DoDeliver.class, value = Delivering.class)
+                static interface Producing {}
+                @@Transition(event = OrderLifecycle.States.Started.SubEvents.ConfirmComplete.class, value = Done.class)
+                static interface Delivering {}
+                @@Final
+                @@ShortCut(OrderLifecycle.States.Finished.class)
+                static interface Done {}
+            }
+            @@EventSet
+            static interface SubEvents {
+
+                static interface DoProduce {}
+                static interface DoDeliver {}
+                static interface ConfirmComplete {}
+            }
+        }
+        @@Final
+        static interface Finished {}
+        @@Final
+        static interface Canceled {}
+    }
+    @@EventSet
+    static interface Events {
+
+        static interface Start {}
+        static interface Cancel {}
+    }
+    @@RelationSet
+    static interface Relations {
+
+        @@RelateTo(ContractLifecycle.class)
+        static interface Contract {}
+    }
+}
+</pre>
+<pre>
+@@LifecycleMeta(OrderLifecycle.class)
+public static class Order extends ReactiveObject {
+
+    private Contract contract;
+
+    public Order(Contract contract) {
+        this.contract = contract;
+        initialState(OrderLifecycle.States.Created.class.getSimpleName());
+    }
+
+    @@Relation(OrderLifecycle.Relations.Contract.class)
+    public Contract getContract() {
+        return this.contract;
+    }
+
+    @@Event
+    public void start() {}
+
+    @@Event
+    public void cancel() {}
+
+    @@Event
+    public void doProduce() {}
+
+    @@Event
+    public void doDeliver() {}
+
+    @@Event
+    public void confirmComplete() {}
+}
+</pre>
+}
