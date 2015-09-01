@@ -79,7 +79,7 @@ public interface ATMLifecycle {
 </pre>
 <h3>2.实现ATM业务对象</h3>
 我们采用了Scala语言来实现ATM类，非常简单。
-<pre>
+<pre class="prettyprint">
 @@LifecycleMeta(classOf[ATMLifecycle]) <comment>//1.采用@@LifecycleMeta指定ATM使用的状态机为ATMLifecycle</comment>
 case class ATM(operatorId: Int) extends ATMLifecycle.Conditions.CashCounter{ <comment>//2.实现Condition接口</comment>
   private var totalCash: Int = 0
@@ -115,7 +115,7 @@ case class ATM(operatorId: Int) extends ATMLifecycle.Conditions.CashCounter{ <co
 </pre>
 <h3>3.监听ATM的生命周期事件</h3>
 Lifecycle框架给开发者预留了生命周期事件处理的回调接口：LifecycleEventHandler。
-<pre>
+<pre class="prettyprint">
 package net.imadz.lifecycle;
 
 public interface LifecycleEventHandler {
@@ -124,7 +124,7 @@ public interface LifecycleEventHandler {
 }
 </pre>
 我们只需要创建一个类来实现了LifecycleEventHandler接口，并重写onEvent方法。
-<pre>
+<pre class="prettyprint">
 class DefaultLifecycleEventHandler extends LifecycleEventHandler {
     override def onEvent(lifecycleEvent: LifecycleEvent): Unit = {
       if (lifecycleEvent.getReactiveObject.isInstanceOf[ATM]) {  <comment>//LifecycleEvent中的Reactive Object就是被状态机处理的对象
@@ -144,7 +144,7 @@ class DefaultLifecycleEventHandler extends LifecycleEventHandler {
   }
 </pre>
 我们采用了Play 2.3.7来实现这个样例，因此在Global对象的onStart方法中注册了DefaultLifecycleEventHandler。
-<pre>
+<pre class="prettyprint">
 override def onStart(app: Application): Unit = {
   @@LifecycleRegistry(Array(classOf[ATM], classOf[DefaultLifecycleEventHandler]))
   @@StateMachineBuilder

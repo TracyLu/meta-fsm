@@ -4,7 +4,7 @@
     例如在Android开放源代码中的<a
             href="http://androidxref.com/4.2_r1/xref/frameworks/base/core/java/com/android/internal/util/StateMachine.java">StateMachine.java</a>
 </p>
-<pre>
+<pre class="prettyprint">
     private class HaltingState extends State {
 728     @@Override
 729     public boolean processMessage(Message msg) {
@@ -67,7 +67,7 @@
 </ul>
 </p>
 
-<pre>
+<pre class="prettyprint">
 @@StateMachine
 protected static interface CustomerLifecycleMeta {
 
@@ -99,13 +99,13 @@ protected static interface CustomerLifecycleMeta {
     如上述代码片段中，描述了一个简单业务对象的生命周期元数据，它仅包括了状态集合States以及事件集合EventSet。其中状态集合中包含了Draft, Active, Suspended, Canceled四个状态，其中Draft是初始状态（通过@@Initial标注），Canceled是最终状态或终结状态（通过@@Final标注）。
     事件集合中包含了Activate, Suspend, Resume以及Cancel四个事件。状态与事件之间的关系通过@@Transition刻画，如下段代码中的@@Transition用来描述，当对象处于Draft状态上，事件Activate可以将对象变换到Active状态；而其他事件对于Draft状态是无效的。
 </p>
-<pre>
+<pre class="prettyprint">
 @@Initial
 @@Transition(event = CustomerLifecycleMeta.Transitions.Activate.class, value = { Active.class })
 static interface Draft {}
 </pre>
 <p>POJO部分代码如下：</p>
-<pre>
+<pre class="prettyprint">
 public abstract static class ReactiveObject {
 
     @@StateIndicator
@@ -124,7 +124,7 @@ public abstract static class ReactiveObject {
     }
 }
 </pre>
-<pre>
+<pre class="prettyprint">
 @@LifecycleMeta(CustomerLifecycleMeta.class)
 public static class Customer extends ReactiveObject {
 

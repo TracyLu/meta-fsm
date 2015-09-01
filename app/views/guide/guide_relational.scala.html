@@ -12,7 +12,7 @@
 <p>合同的状态图如下：</p>
 <p><img src="/assets/images/guide/Relational_Contract.png" width="40%" height="40%" alt="合同"></p>
 <p>根据状态图，我们用状态机元数据描述如下：</p>
-<pre>
+<pre class="prettyprint">
 @@StateMachine
 static interface ContractLifecycle {
 
@@ -78,7 +78,7 @@ public static class Contract extends ReactiveObject {
 <p>为了实现只有在合同处于有效状态时，客户订单才能被处理的需求，我们需要在订单事件发生时，检测合同的状态。<br/>
 我们通过在订单状态上添加@@ValidWhile标识来表达这个约束语义。</p>
 <p>@@ValidWhile的定义如下：</p>
-<pre>
+<pre class="prettyprint">
 @@Target(ElementType.TYPE)
 @@Retention(RetentionPolicy.RUNTIME)
 public @@interface ValidWhile {
@@ -92,7 +92,7 @@ public @@interface ValidWhile {
     ErrorMessage[] otherwise() default {};
 }
 </pre>
-<pre>
+<pre class="prettyprint">
 @@StateMachine
 static interface OrderLifecycle {
 
@@ -149,7 +149,7 @@ static interface OrderLifecycle {
     }
 }
 </pre>
-<pre>
+<pre class="prettyprint">
 @@LifecycleMeta(OrderLifecycle.class)
 public static class Order extends ReactiveObject {
 

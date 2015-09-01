@@ -11,7 +11,7 @@
 <p>根据需求，我们绘制了客户的状态图，如下所示：</p>
 <img class="diagram" src="/assets/images/guide/Composite_FSM.png" width="40%" height="40%" alt="Composite FSM"></p>
 <p>根据状态图，我们用状态机元数据描述如下：</p>
-<pre>
+<pre class="prettyprint">
 @@StateMachine
 static interface OrderLifecycle {
 
@@ -62,7 +62,7 @@ static interface OrderLifecycle {
 </pre>
 <p>图中的Started是一个组合状态，里面包含了一个子状态机。这么设计的原因是客户在开始订单之后、未确认收货之前都可以要求取消订单。</p>
 <p>下面是POJO代码：</p>
-<pre>
+<pre class="prettyprint">
 public abstract static class ProductBase extends ReactiveObject {}
 
 @@LifecycleMeta(OrderLifecycle.class)

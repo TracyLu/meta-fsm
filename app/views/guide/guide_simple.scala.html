@@ -17,32 +17,32 @@
 <ul>
     <li><i>步骤 1.0 克隆工程</i></li>
     <p>请在您机器上选择一个工作目录，打开命令行，切换到该工作目录下，运行下列指令：<br>
-        <pre>
+        <pre class="prettyprint">
 git clone https://github.com/TracyLu/LifecycleDevGuide.git
 cd LifecycleDevGuide
 git checkout simple-fsm-step-1.0
 </pre>
     上面的命令将从远程克隆工程到本地，并且重置你的工作空间到例子的步骤0。使用IDEA打开该工程。</br>
     在后面的每个步骤中，您可以在LifecycleDevGuide目录下运行命令来查看每个步骤的代码:</br>
-    <pre>git checkout simple-fsm-step-步骤编号</pre>
+    <pre class="prettyprint">git checkout simple-fsm-step-步骤编号</pre>
     这个命令将导致你之前做的修改都丢失。
     </p>
     <li><i>步骤 1.1 创建状态机接口</i></li>
     <p>
         我们已经在net.imadz.guide.lifecycle包中为您创建了CustomerLifecycleMeta接口，请在该接口类上添加@@StateMachine标注，代码如下：<br>
-        <pre>
+        <pre class="prettyprint">
 @@StateMachine
 public interface CustomerLifecycleMeta {
 
 }
         </pre>
     你可以执行下面的命令来查看本步骤的代码。
-    <pre>git checkout simple-fsm-step-1.1</pre>
+    <pre class="prettyprint">git checkout simple-fsm-step-1.1</pre>
     </p>
 
     <li><i>步骤 1.2 添加状态集合</i></li>
     接下来我们在CustomerLifecycleMeta接口中，添加内部接口States，来定义Customer所有的状态。
-    <pre>
+    <pre class="prettyprint">
 @@StateSet
 static interface States {
 
@@ -52,19 +52,19 @@ static interface States {
     <ol>
         <li>添加初始状态</li>
         <p>我们在States中添加接口Draft来表示Draft状态，使用@@Initial来表示该状态为初始状态。代码如下：</p>
-        <pre>
+        <pre class="prettyprint">
 @@Initial
 static interface Draft {}
         </pre>
         <li>添加终结状态</li>
         <p>然后，我们在States中添加终结状态。我们用接口Cancelled来表示Cancelled状态，使用@@Final来表示该状态为终结状态。代码如下：</p>
-        <pre>
+        <pre class="prettyprint">
 @@Final
 static interface Cancelled {}
         </pre>
         <li>添加中间状态</li>
         <p>最后，我们还剩下Active和Suspended两个中间状态需要描述。中间状态的描述比较简单，只需要添加相应的接口即可。代码如下：</p>
-        <pre>
+        <pre class="prettyprint">
 static interface Active {}
 static interface Suspended {}
         </pre>
@@ -73,14 +73,14 @@ static interface Suspended {}
     <p>状态定义先告一段落，接下来我们需要定义使得业务对象从一个状态迁移到另一个状态的事件集合。</br>
         我们在CustomerLifecycleMeta中定义Events接口，在接口Events上添加@@EventSet注释来表示该接口定义的是事件集合。代码如下：
     </p>
-    <pre>
+    <pre class="prettyprint">
 @@EventSet
 static interface Events {}
    </pre>
     <p>我们在定义的Events中添加各个事件。我们有4个事件需要定义，它们分别是：Activate、Suspend、Resume、Cancel。<br>
         事件的定义非常简单，只需要使用接口来表示即可。代码如下：
     </p>
-    <pre>
+    <pre class="prettyprint">
 static interface Activate {}
 
 static interface Suspend {}
@@ -93,7 +93,7 @@ static interface Cancel {}
     <p>转移指的是业务对象在某个事件的触发下，从一个状态迁移到另一个状态。所以转移包括三部分：当前状态、当前状态下可响应的事件、下一个状态。<br>
         我们通过在非终结状态上添加如下注释，达到了刻画转移的目的。Draft状态下的转移定义代码如下：
     </p>
-    <pre>
+    <pre class="prettyprint">
 @@Initial
 @@Transition(event = Events.Activate.class, value = Active.class)
 static interface Draft {}
@@ -102,14 +102,14 @@ static interface Draft {}
         <br>
         @@Transition注释包含两个属性: event指的是Customer处于Draft状态时，可响应的Activate事件，value指的是Customer响应该事件后，迁移到了Active状态。<br>
         上述代码刻画了单一转移如何定义，下面我们来演示一下单状态上的多个转移如何定义。<br></p>
-<pre>
+<pre class="prettyprint">
 @@Transitions({@@Transition(event = Events.Suspend.class, value = Suspended.class), @@Transition(event = Events.Cancel.class, value = Cancelled.class)})
 static interface Active {}
 </pre>
     <p>通过@@Transitions我们可以定义多个转移。</p>
 
     <p>最后，我们还剩下Suspend的转移等待定义。它只有一个转移，所以类似于Draft状态，代码如下：</p>
-    <pre>
+    <pre class="prettyprint">
 @@Transition(event = Events.Resume.class, value = Active.class)
 static interface Suspended {}
     </pre>
@@ -120,7 +120,7 @@ static interface Suspended {}
     <li><i>步骤 2.1 创建Customer类并为其指定状态机元数据</i></li>
     <p>我们在net.imadz.guide.impl包中定义了Customer类。我们要做的就是将CustomerLifecycle和Customer关联起来。<br>
         我们只需要在Customer类上添加@@LifecycleMeta注释(Annotation)，代码如下：</p>
-            <pre>
+            <pre class="prettyprint">
 @@LifecycleMeta(value = CustomerLifecycleMeta.class)
 public class Customer {
 
@@ -129,7 +129,7 @@ public class Customer {
     <li><i>步骤 2.2 添加状态标识</i></li>
     <p>我们需要定义一个状态标识，好让Lifecycle引擎知道如何设置状态。我们有两种设置状态标识的方式：一种是在field上，一种是在属性上。<br>
         我们先使用@@StateIndicator在field标注状态，并提供状态的getter方法。代码如下：</p>
-            <pre>
+            <pre class="prettyprint">
 @@StateIndicator
 private String state = null;
 
@@ -139,7 +139,7 @@ public String getState() {
             </pre>
     <li><i>步骤 2.3 初始化新建Customer的状态</i></li>
     <p>这一步比较简单，这需要提供一个构造方法，然后初始化state。代码如下：</p>
-            <pre>
+            <pre class="prettyprint">
 public Customer() {
     state = CustomerLifecycleMeta.States.Draft.class.getSimpleName();
 }
@@ -152,7 +152,7 @@ public Customer() {
         <li>可取任意的名称，需要在@@Event注释中填写对应的事件类。</li>
     </ol>
     这里，我们选用第一种方式，代码如下：</p>
-            <pre>
+            <pre class="prettyprint">
 @@Event
 public void activate(){}
 
@@ -169,7 +169,7 @@ public void cancel(){}
 <h4>步骤3：添加并执行测试用例</h4>
 <p>在test目录下的net.imadz.guide.impl包中，有一个CustomerTest类，添加以下代码便可在命令行执行mvn clean test。
 </p>
-<pre>
+<pre class="prettyprint">
 @@Test
 public void should_support_legal_requests() {
     Customer customer = new Customer();
