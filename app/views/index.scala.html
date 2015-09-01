@@ -41,7 +41,7 @@
             <h2 class="section-heading">业务逻辑更加清晰<br></h2>
             <div class="col-lg-5 col-sm-6">
                 <h3>未使用Lifecycle</h3>
-                <pre>
+                <pre class="prettyprint">
 public void deposit() {
     if (canDeposit()) {
         totalCash += 100;
@@ -58,7 +58,7 @@ public void deposit() {
             </div>
             <div class="col-lg-5 col-lg-offset-2 col-sm-6">
                 <h3>使用Lifecycle</h3>
-                <pre>
+                <pre class="prettyprint">
 @@Event(classOf[Deposit])
 def deposit() = {
     totalCash += 100
@@ -82,7 +82,7 @@ def deposit() = {
             <div class="col-lg-5 col-sm-6">
                 <h3>未使用Lifecycle</h3>
                 <h5>对象的生命周期变化隐藏在业务代码中，需要仔细分析才能弄清楚。</h5>
-                <pre>
+                <pre class="prettyprint">
 public class ATM {
     public static final String EMPTY = "Empty";
     public static final String NON_EMPTY = "NonEmpty";
@@ -162,7 +162,7 @@ public class ATM {
             <div class="col-lg-5 col-lg-offset-2 col-sm-6">
                 <h3>使用Lifecycle</h3>
                 <h5>有单独的类来描述对象的生命周期，非常清晰，易于理解和维护。</h5>
-                <pre>
+               <pre class="prettyprint">
 @@StateMachine
 public interface ATMLifecycle {
 
