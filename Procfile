@@ -1,0 +1,1 @@
+web: target/universal/stage/bin/meta-fsm -Dhttp.port=${PORT} -DapplyEvolutions.default=true
